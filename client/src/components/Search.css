@@ -1,0 +1,27 @@
+.rat{
+    font-size: 30px;
+}
+.searchHead{
+    text-align:center;
+    font-size: 40px;
+    
+}
+.return{
+    text-transform:none;
+    border-bottom:none;
+    padding: 10px;
+    border-radius: 10px;
+    margin-left: 100px;
+    
+}
+.searchForm{
+    width:800px;
+    display:flex;
+    justify-content:space-between;
+    margin-top:30%
+}
+.searchButton{
+    font-size: 18px;
+    padding:5px;
+    justify-self: center;
+}

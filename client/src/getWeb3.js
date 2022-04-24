@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import Timestamping from './contracts/Timestamping.json'
 
-
+export const abi = Timestamping.abi;
 let selectedAccount;
 let contract;
 let isReady = false;
@@ -69,6 +69,8 @@ export const sendCommitment =async(_data,_commiment) =>{
   if(!isReady) {
     await init();
 }
+
+
 return contract.methods.sendCommitment(_data,_commiment).send({from:selectedAccount})
 }
 
@@ -76,7 +78,7 @@ export const revealCommitment= async(_data,_time,_nonce)=>{
   if(!isReady) {
     await init();
 }
-return contract.methods.requestTimestamp(_data,_time,_nonce).send({from:selectedAccount});
+return contract.methods.revealCommitment(_data,_time,_nonce).send({from:selectedAccount});
 }
 
 export const selectStampRequester =async(_data) =>{
@@ -130,3 +132,47 @@ export const getBalance =async ()=>{
 }
   return contract.methods.getBalance().call({from:selectedAccount});
 }
+
+export const getData = async()=>{
+  if(!isReady) {
+    await init();
+}
+return await contract.methods.getFilehash().call({from:selectedAccount})
+}
+
+export const getState1 =async ()=>{
+  if(!isReady) {
+    await init();
+}
+return await  contract.methods.getState1().call({from:selectedAccount});
+}
+export const getState2 =async ()=>{
+  if(!isReady) {
+    await init();
+}
+return await  contract.methods.getState2().call({from:selectedAccount});
+}
+
+export const getTimestamp= async(_data)=>{
+  if(!isReady) {
+    await init();
+}
+return await  contract.methods.getTimestamp(_data).call({from:selectedAccount})
+}
+
+export const getRequester=async(data)=>{
+  if(!isReady) {
+    await init();
+}
+return await contract.methods.getRequester(data).call({from:selectedAccount});
+}
+// emmiting events
+
+
+export const dataEvent=async()=>{
+  if(!isReady) {
+    await init();
+}
+ return contract.events.Datasender()
+}
+

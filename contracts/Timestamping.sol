@@ -2,9 +2,13 @@
 pragma solidity ^0.8.10;
 
 contract Timestamping {
+
+    string fileHash;
+    uint state1=0;
+    uint state2=0;
     address owner; // contract owner
      // each customer can have a stamp pending order
-    mapping (bytes32 => order) orders;
+    mapping (string => order) orders;
     mapping (address => uint) stampers;
     address[] stampersList;
     mapping (address => uint) balance;
@@ -46,7 +50,7 @@ contract Timestamping {
         _;
     }
     
-    modifier commitmentsRestrictions(bytes32 data) {
+    modifier commitmentsRestrictions(string memory data) {
         require(stampers[msg.sender] == 1);
         require(orders[data].commitments.length < commitmentsLimit);
         _;
@@ -57,13 +61,13 @@ contract Timestamping {
         _;
     }
 
-    modifier revealRetrictions(bytes32 data) {
+    modifier revealRetrictions(string memory data) {
         require(stampers[msg.sender] == 1);
         require(isRevealInterval(data) == 1);
         _;
     }
     
-    modifier selectRestrictions(bytes32 data) {
+    modifier selectRestrictions(string memory data) {
         require(orders[data].requester == msg.sender);
         require(isSelectStampInterval(data) == 1);
         _;
@@ -74,14 +78,16 @@ contract Timestamping {
         _;
     }
 
-    event Datasender(bytes32 _data,uint _t2,uint _t3);
+    event Datasender(string _data,uint _t2,uint _t3);
 
 /* User says he wants to stamp something */
-    function requestTimestamp(bytes32 data) public payable requestRestrictions {
+    function requestTimestamp(string memory data) public payable requestRestrictions {
+        fileHash=data;
+        state1=1;
         orders[data].requester = msg.sender;
         orders[data].t1 = block.timestamp;
-        orders[data].t2 = orders[data].t1 + 16;
-        orders[data].t3 = orders[data].t2 + 16;
+        orders[data].t2 = orders[data].t1 + 30;
+        orders[data].t3 = orders[data].t2 + 30;
         orders[data].deposit = msg.value;
         orders[data].status = 0;
         lastRequest = block.number;
@@ -106,21 +112,23 @@ contract Timestamping {
         }
     }
 /* Provider sends commitment to 'data' before time T2 */
-    function sendCommitment(bytes32 data, bytes32 commitment) public commitmentsRestrictions(data) {
+    function sendCommitment(string memory data, bytes32 commitment) public commitmentsRestrictions(data) {
         orders[data].stampers.push(msg.sender);
         orders[data].commitments.push(commitment);
     }
     
 /* Provider releases commitment for 'data' between time T2 and T3 */
-    function revealCommitment(bytes32 data, uint time, uint nonce) public revealRetrictions(data) {
+    function revealCommitment(string memory data, uint time, uint nonce) public revealRetrictions(data) {
         for (uint i = 0; i < orders[data].stampers.length; i++) {
             if (orders[data].stampers[i] == msg.sender){
                 if (keccak256(abi.encodePacked(data,time,nonce)) == orders[data].commitments[i]) {
                     orders[data].commitments[i] = bytes32(time);
                     orders[data].times.push(time);
-                }
-                
+                    state2=1;
+                } 
                 break;
+                 
+                
             }
         }
     }
@@ -128,59 +136,45 @@ contract Timestamping {
 
   
 /* User requests stamp after time T3 */
-    function selectStampRequester(bytes32 data) public selectRestrictions(data) {
-        if (orders[data].times.length < minimumProviders) {
+    function selectStampRequester(string memory data) public{
+
+        uint t=0;
+            for(uint i=0; i<orders[data].times.length; i++)
+            {
+                t=t+orders[data].times[i];
+            }
+            orders[data].timestamp=uint(t/orders[data].times.length);
             reimburse(data);
-            orders[data].status = 2;
-        } else {
-            sortArray(data);
-            uint first = 0;
-            uint last = orders[data].times.length-1;
-            uint median = (orders[data].times.length-1)/2;
-            for (uint i = 0; i < orders[data].times.length; i++) {
-                if (orders[data].times[i] < orders[data].times[median] - rewardWindow) {
-                    first += 1;
-                } else if (orders[data].times[i] > orders[data].times[median] + rewardWindow) {
-                    last = i-1;
-                    break;
-                }
-            }
-            if (last - first + 1 < minimumProviders) {
-                reimburse(data);
-                orders[data].status = 2;
-            } else {
-                orders[data].timestamp = orders[data].times[first];
-                reward(data, first, last);
-                orders[data].status = 1;
-            }
-        }
-        delete orders[data].stampers;
-        delete orders[data].commitments;
-        delete orders[data].times;
-        delete orders[data].t1;
-        delete orders[data].t2;
-        delete orders[data].t3;
-        delete orders[data].deposit;
+            orders[data].status = 1;
+            delete orders[data].stampers;
+            delete orders[data].commitments;
+            delete orders[data].times;
+            delete orders[data].t1;
+            delete orders[data].t2;
+            delete orders[data].t3;
+            delete orders[data].deposit;
+            delete fileHash;
+            state1=0;
     }
     
     
    
 /* Query functions after stamp completion */
-    function getTimestamp(bytes32 data) public view returns(uint) {
+    function getTimestamp(string memory data) public view returns(uint) {
         return orders[data].timestamp;
     }
     
-    function getRequester(bytes32 data) public view returns(address) {
+    function getRequester(string memory data) public view returns(address) {
         return orders[data].requester;
     }
 
  
 /* Helper sort functions */
-    function sortArray(bytes32 data) internal {
+    function sortArray(string memory data) internal {
         quicksort(data, 0, int(orders[data].times.length-1));
     }
     
-    function quicksort(bytes32 data, int low, int high) internal {
+    function quicksort(string memory data, int low, int high) internal {
         if (low < high) {
             int split = partition(data, low, high);
         require(owner == msg.sender);
@@ -189,7 +183,7 @@ contract Timestamping {
         }
     }
     
-    function partition(bytes32 data, int low, int high) internal returns(int) {
+    function partition(string memory data, int low, int high) internal returns(int) {
         int i = low - 1;
         uint troca ;
         for (int j = low; j < high; j++) {
@@ -207,19 +201,19 @@ contract Timestamping {
     }
     
    /* Auxiliary query functions */
-    function isCommitmentInterval(bytes32 data) public view returns(uint) {
+    function isCommitmentInterval(string memory data) public view returns(uint) {
         if ((block.timestamp < orders[data].t2 || orders[data].t1 == 0) && orders[data].status == 0)
             return 1;
         return 0;
     }
     
-    function isRevealInterval(bytes32 data) public view returns(uint) {
+    function isRevealInterval(string memory data) public view returns(uint) {
         if (block.timestamp >= orders[data].t2 && block.timestamp < orders[data].t3)
             return 1;
         return 0;
     }
     
-    function isSelectStampInterval(bytes32 data) public view returns(uint) {
+    function isSelectStampInterval(string memory data) public view returns(uint) {
         if (block.timestamp >= orders[data].t3 && orders[data].t3 != 0)
             return 1;
         return 0;
@@ -229,31 +223,40 @@ contract Timestamping {
         return block.number;
     }
     
-    function getOrderT1(bytes32 data) public view returns(uint) {
+    function getOrderT1(string memory data) public view returns(uint) {
         return orders[data].t1;
     }
     
-    function getOrderT2(bytes32 data) public view returns(uint) {
+    function getOrderT2(string memory data) public view returns(uint) {
         return orders[data].t2;
     }
     
-    function getOrderT3(bytes32 data) public view returns(uint) {
+    function getOrderT3(string memory data) public view returns(uint) {
         return orders[data].t3;
     }
        
     
-    function getOrderDeposit(bytes32 data) public view returns(uint) {
+    function getOrderDeposit(string memory data) public view returns(uint) {
         return orders[data].deposit;
     }
     
-    function getStatus(bytes32 data) public view returns(uint) {
+    function getStatus(string memory data) public view returns(uint) {
         return orders[data].status;
     }
     
     function getStampers() public view returns(address [] memory ){
         return stampersList;
     }
-    
+
+    function getFilehash()public view returns(string memory) {
+        return fileHash;
+    }
+     function getState1()public view returns(uint){
+        return state1;
+    }
+    function getState2()public view returns(uint){
+        return state2;
+    }
 /* Configuration area */
 
 
@@ -324,7 +327,7 @@ contract Timestamping {
     
    
 // Function to reimburse the applicant and the providers that participated
-    function reimburse(bytes32 data) internal {
+    function reimburse(string memory data) internal {
        // Number of providers that participated
         uint providers = orders[data].stampers.length;
         
@@ -364,7 +367,7 @@ contract Timestamping {
     
     
 // Function to distribute reward
-    function reward(bytes32 data, uint first, uint last) internal {
+    function reward(string memory data, uint first, uint last) internal {
        
         uint rewardValue = orders[data].deposit/(last - first + 1);
         for (uint i = first; i <= last; i++) {
@@ -380,7 +383,7 @@ contract Timestamping {
 
 /* Debug functions */
     
-    function getOrderStampTimes(bytes32 data) public view returns(uint[] memory) {
+    function getOrderStampTimes(string memory data) public view returns(uint[] memory) {
         return orders[data].times;
     }
 

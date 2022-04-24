@@ -15,6 +15,7 @@
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+  font-family: 'Cabin', sans-serif;
 }
 
 .App-link {
@@ -22,4 +23,49 @@
 }
 .link{
   text-decoration: none;
+}
+.homeWrapper{
+  height: 100vh;
+  /* background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);; */
+  
+}
+.home{
+height: 100%;
+display: flex;
+flex-direction: column;
+align-items: center;
+/* justify-content: center; */
+}
+.home .head{
+  font-size: 75px;
+  /* font-family: 'Times New Roman', Times, serif; */
+}
+.buttonList{
+  display: flex;
+  width: 100%;
+  justify-content: space-around;
+}
+
+.home button{
+  padding: 10px;
+  font-size: large;
+
+}
+
+.search{
+  display: flex;
+  flex-direction: column;
+  width: 500px;
+}
+.ssub{
+  display: flex;
+  align-items: center;
+}
+.ssub>b{
+  margin-right: 10px;
+}
+.mainbox{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
