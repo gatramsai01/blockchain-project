@@ -1,0 +1,12 @@
+.time{
+    text-align: center;
+    font-family: 'Cabin', sans-serif;
+    font-size: larger;
+}
+.timer{
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    margin-top: 300px;
+   
+}

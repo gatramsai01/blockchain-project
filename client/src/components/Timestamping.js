@@ -1,14 +1,18 @@
  import React,{useState} from 'react'
 import{getOrderT3, getStatus, getTimestamp, requestTimestamp, selectStampRequester} from '../getWeb3'
+import './Timestamp.css';
+
+
+
 
 const Timestamping = () => {
 const [data,setData ] = useState('');
-const [deposit,setDeposit]=useState(0);;
+const [deposit,setDeposit]=useState(0);
 const [tx,setTx]=useState('');
 const [display, setDisplay] = useState(true);
 const [timer, setTimer] = useState(0);
 const [stat,setStat]=useState('');
-
+const [stamp,setStamp]=useState('')
 function delay(delayInms) {
   return new Promise(resolve => {
     setTimeout(() => {
@@ -25,7 +29,8 @@ const sendData=(_data,_deposit)=>{
     console.log(status);
     if(status === '0'||status==='2') {
       console.log("In if block")
-      if (_deposit>=0.01){
+      console.log(typeof deposit);
+      if (_deposit>='0.01'){
           requestTimestamp(data,_deposit).then((res) => {
           console.log(res);
           setDisplay(false);
@@ -44,7 +49,9 @@ const sendData=(_data,_deposit)=>{
             console.log("data:"+data);
             selectStampRequester(data).then((res) => {
               getTimestamp(data).then((res)=>{
-                console.log(res);
+                const dateObject = new Date(parseInt(res)*1000);
+                let date = dateObject.toLocaleString();
+                setStamp(date);
               })
               console.log(res);
             })
@@ -65,33 +72,36 @@ const sendData=(_data,_deposit)=>{
 
 
   return (
-    <div>
-      
-      {display &&<div>
-        <h1>Get your file timestamped here</h1>
-        {
-
-        }
-        <form onSubmit={(e) => {sendData(data,deposit); e.preventDefault()}} >
+    
+    <div className='app2'>
+      <h1>Get your file timestamped here</h1>
+      {display &&<div className='app3'>
+        
+        
+        <form onSubmit={(e) => {sendData(data,deposit); e.preventDefault()}} className='f'>
           <label>
-            enter the hash here:
-          <input type='text' name='data' onChange = {(event )=> {setData(event.target.value);
+            Enter the hash here:
+          <input type='text'className='texts1' name='data' onChange = {(event )=> {setData(event.target.value);
           console.log(event.target.value)}}/>
           </label>
           <label>
-            enter the deposit amount:
-          <input type='text' name='deposit'onChange={(event)=>{setDeposit(event.target.value)}}/>
+            Enter the deposit amount:
+          <input type='text'className='texts' name='deposit'onChange={(event)=>{setDeposit(event.target.value)}}/>
           </label>
-          <button type='submit'>get timestamp</button>
+          <button type='submit' className='submit'>Get timestamp</button>
         </form>
         <p>{stat}</p>
         <p>{tx}</p>
         </div>
       }
       
-      {!display && 
-        <p>{timer}</p>
+      {!display && <div>
+      <p>{tx}</p>
+        <p>wait for {timer} seconds for timestamp</p>
+        </div>
       }
+        <p>timestamp:<b>{stamp}</b></p>
+
     </div>
   )
 }

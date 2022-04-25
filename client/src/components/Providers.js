@@ -1,16 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import Web3 from 'web3';
 import {dataEvent, getAccount, getData, getOrderT2, getStampers, getState2, getState1, joinStamper, revealCommitment, sendCommitment, getOrderT3 } from '../getWeb3'
-
+import './Providers.css';
  const Providers = () => {
   const [register,setRegister]=useState(false);
   const [bail,setBail]=useState('0');
   const [bailWarn,setBailWarn]=useState('');
-
   const [counter,setCounter] = useState(0);
   const[wait,setWait]=useState('');
-  const[sendCommit,setSendCommit]=useState('');
-  const[revealCommit,setRevealCommit]=useState('');
   const[fileHash,setFileHash]=useState('')
   function delay(delayInms) {
     return new Promise(resolve => {
@@ -23,35 +20,36 @@ import {dataEvent, getAccount, getData, getOrderT2, getStampers, getState2, getS
 
   useEffect(()=>{
     let account;
-
+// checking if registered
     getAccount().then((res)=>{
       account=res;
-      console.log(account);
+      console.log(typeof account);
+      console.log("local account:"+account)
       getStampers().then((res)=>{
+        // console.log(typeof res);
         res.forEach(element => {
-          if(account===element){
-            
+          // console.log(typeof element);
+          // console.log('account in blockchain:'+element)
+          // console.log();
+          if(toString( account) ===toString( element)){
             console.log("in if block")
             setRegister(true);
-            return false;
           }
-          else{
-            console.log("in else block")
-          return true;
-        }
         });
       });
     });
 
-    // checking if registered
+    
     
 
     console.log(register);
+
+//after registered
     if(register){
       getState1().then((res)=>{
         console.log(`state1 : ${res}`);
         // state update
-        if(res == 0)
+        if(res == '0')
         {
           // updating the state for continous updation
           setCounter(1-counter);
@@ -60,16 +58,12 @@ import {dataEvent, getAccount, getData, getOrderT2, getStampers, getState2, getS
         }
         else{
          getData().then((res)=>{
-           setWait('');
            let hash =res;
-           setFileHash(hash);
            const timestamp=Math.floor(Date.now()/1000);
           const nonce=Math.floor(Math.random()*100);
           let commitment =  Web3.utils.soliditySha3({type:'string',value:hash},timestamp,nonce);
           console.log(commitment);
           sendCommitment(hash,commitment).then(()=>{
-            setSendCommit('')
-            setSendCommit(`you have sent commitment to timestamp ${fileHash}`)
             console.log('commit is sent');
             getOrderT2(hash).then(async(res)=>{
               const time=Math.floor(Date.now()/1000);
@@ -81,11 +75,8 @@ import {dataEvent, getAccount, getData, getOrderT2, getStampers, getState2, getS
                 await delay(1000);
               }
               revealCommitment(hash,timestamp,nonce).then((res)=>{
-                setSendCommit('');
-                setRevealCommit(`you have revealed the commit of ${fileHash}`);
                 getState2().then((res)=>{
                   console.log("state2:"+res)
-
                 })
               })
             })
@@ -117,7 +108,12 @@ import {dataEvent, getAccount, getData, getOrderT2, getStampers, getState2, getS
 
     if(!register){
       return(<div className=''>
-        <h1>register for Timestamping</h1>
+        <div className='time'>
+
+        
+        <h1>Register for Timestamping</h1>
+        </div>
+        <div className='timer'>
       <form onSubmit={(e) =>{registerStamper(bail);e.preventDefault()}}>
         <label>
           Enter deposit amount in ether:
@@ -125,14 +121,15 @@ import {dataEvent, getAccount, getData, getOrderT2, getStampers, getState2, getS
         </label>
         <button type='submit'>register</button>
       </form>
+      </div>
+     
       <p>{bailWarn}</p>
       </div>)
     }
     else{
       return(<div>
         <p>{wait}</p>
-        <p>{sendCommit}</p>
-        <p>{revealCommit}</p>
+        
       </div>)
     }
 
